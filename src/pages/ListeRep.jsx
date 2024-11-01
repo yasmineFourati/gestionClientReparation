@@ -47,7 +47,6 @@ const ListeRep = () => {
         navigate('/');
     };
 
-    // Filter reparations based on the search input
     const filteredReparations = reparations.filter(reparation =>
         reparation.numeroDossier.toLowerCase().includes(searchInput.toLowerCase())
     );
@@ -66,11 +65,11 @@ const ListeRep = () => {
                             placeholder="Recherche par numéro de dossier"
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
-                            className="border border-gray-300 p-2 rounded mr-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border border-gray-300 p-2 rounded mr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
                         />
                         <button
                             onClick={handleLogout}
-                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300"
                         >
                             Déconnexion
                         </button>

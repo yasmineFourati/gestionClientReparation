@@ -3,7 +3,7 @@ import Sidebar from '../components/Sidebarr';
 import Footer from '../components/Footer';
 import { FaLaptop, FaClock, FaPlus, FaMinus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-
+//redirection vers la page listerep lors de lajout dune rep et les champs sont tous remplies
 const Reparation = () => {
     const [reparation, setReparation] = useState({
         ordinateur: '',
@@ -29,6 +29,7 @@ const Reparation = () => {
         console.log('Réparation ajoutée:', reparation);
         setReparation({ ordinateur: '', heures: '', description: '', piecesChangees: [''] });
         setError('');
+        //navigate('/listerep');
     };
 
     const handlePieceChange = (index, value) => {
@@ -51,24 +52,23 @@ const Reparation = () => {
         <div className="flex">
             <Sidebar />
             <main className="flex-1 p-10 bg-gray-50 ml-64 min-h-screen">
-            <header className="flex justify-between items-center mb-8">
-    <h2 className="text-2xl font-bold text-gray-800">Fiche de Réparation</h2>
-    <div className="flex space-x-4">
-        <button
-            onClick={() => navigate('/listerep')}
-            className="bg-gray-600 text-white px-4 py-2 rounded shadow-md hover:bg-gray-700 transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500"
-        >
-            Liste des Réparations
-        </button>
-        <button
-            onClick={handleLogout}
-            className="bg-blue-600 text-white px-4 py-2 rounded shadow-md hover:bg-blue-700 transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-            Déconnexion
-        </button>
-    </div>
-</header>
-
+                <header className="flex justify-between items-center mb-8">
+                    <h2 className="text-2xl font-bold text-gray-800">Fiche de Réparation</h2>
+                    <div className="flex space-x-4">
+                        <button
+                            onClick={() => navigate('/listerep')}
+                            className="bg-gray-600 text-white px-4 py-2 rounded shadow-md hover:bg-gray-700 transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                        >
+                            Liste des Réparations
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300"
+                            >
+                            Déconnexion
+                        </button>
+                    </div>
+                </header>
 
                 <div className="bg-white rounded-lg shadow-md p-8 mb-6 border border-gray-200">
                     <h3 className="text-xl font-semibold mb-6 text-gray-700">Ajouter une Réparation</h3>
@@ -136,7 +136,7 @@ const Reparation = () => {
                         <div className="flex items-center justify-between mt-4 space-x-4">
                             <button
                                 onClick={addPiece}
-                                className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-md shadow-lg hover:bg-green-700 transition ease-in-out"
+                                className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-md shadow-lg hover:bg-blue-700 transition ease-in-out"
                             >
                                 <FaPlus className="mr-2" />
                                 Ajouter une Pièce
@@ -151,14 +151,15 @@ const Reparation = () => {
                             </button>
                         </div>
                     </div>
-
-                    <button
-                        onClick={ajouterReparation}
-                        className="flex items-center justify-center bg-green-600 text-white px-6 py-3 mt-6 rounded-md shadow-lg hover:bg-blue-700 transition ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    >
-                        <FaPlus className="mr-2" />
-                        Ajouter Réparation
-                    </button>
+                    <div className="flex justify-center mb-6">
+    <button
+        onClick={ajouterReparation}
+        className="flex items-center justify-center bg-green-600 text-white px-4 py-2 rounded-md shadow-lg hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+    >
+        <FaPlus className="mr-2" />
+        Ajouter une Réparation
+    </button>
+</div>
                 </div>
 
                 <Footer />

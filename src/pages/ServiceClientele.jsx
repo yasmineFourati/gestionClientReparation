@@ -2,10 +2,8 @@ import React, { useState } from 'react';
 import Sidebar from '../components/Sidebarr';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
-import { FaUser, FaPhone, FaHome, FaLaptop, FaBarcode, FaCalendarAlt } from 'react-icons/fa';
-import ListeClients from './ListeClients';
-import { FaPlus } from 'react-icons/fa'
-
+import { FaUser, FaPhone, FaHome, FaLaptop, FaBarcode, FaCalendarAlt, FaPlus } from 'react-icons/fa';
+///////////la redirection vers la liste des clients en ajoutant un client (bouton onclick)
 const ServiceClientele = () => {
     const navigate = useNavigate();
 
@@ -24,20 +22,49 @@ const ServiceClientele = () => {
         symptomesPanne: '',
         dateDepot: '',
         dateRemise: '',
-        etatReparation: ['En attente'],
+        etatReparation: 'En attente de confirmation',
     });
 
     const [error, setError] = useState('');
 
-    const ajouterClient = () => {
-        if (!nouveauClient.nom || !nouveauClient.telephone || !nouveauClient.adresse || !nouveauClient.marqueAppareil || !nouveauClient.modeleAppareil || !nouveauClient.numeroSerie || !nouveauClient.symptomesPanne || !nouveauClient.dateDepot || !nouveauClient.dateRemise) {
+    const ajouterClient = (e) => {
+        e.preventDefault();
+        const isEmpty = Object.values(nouveauClient).some(value => value === '');
+        if (isEmpty) {
             setError('Tous les champs sont obligatoires.');
             return;
         }
 
-        setClients([...clients, { ...nouveauClient, id: clients.length + 1, etatReparation: 'En attente de confirmation' }]);
-        setNouveauClient({ nom: '', telephone: '', adresse: '', marqueAppareil: '', modeleAppareil: '', numeroSerie: '', symptomesPanne: '', dateDepot: '', dateRemise: '', etatReparation: [] });
+        const clientExists = clients.some(client =>
+            client.nom === nouveauClient.nom &&
+            client.telephone === nouveauClient.telephone &&
+            client.adresse === nouveauClient.adresse
+        );
+
+        if (clientExists) {
+            setError('Ce client existe déjà.');
+            return;
+        }
+
+        const newClient = { ...nouveauClient, id: clients.length + 1 };
+        setClients(prevClients => [...prevClients, newClient]);
+
+        setNouveauClient({
+            nom: '',
+            telephone: '',
+            adresse: '',
+            marqueAppareil: '',
+            modeleAppareil: '',
+            numeroSerie: '',
+            symptomesPanne: '',
+            dateDepot: '',
+            dateRemise: '',
+            etatReparation: 'En attente de confirmation',
+        });
         setError('');
+        console.log('Clients après ajout:', [...clients, newClient]);
+
+        navigate('/listeclient');
     };
 
     const handleLogout = () => {
@@ -46,21 +73,21 @@ const ServiceClientele = () => {
     };
 
     return (
-        <div className="flex">
+        <div className="flex flex-col min-h-screen">
             <Sidebar />
             <main className="flex-1 p-10 bg-gray-100 ml-64">
                 <header className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-800">Gestion du Service Clientèle</h2>
                     <div className="flex items-center">
                         <button
-                            onClick={() => navigate('/listeclient')} /////////////////////
+                            onClick={() => navigate('/listeclient')}
                             className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition mr-4"
                         >
                             Liste des Clients
                         </button>
                         <button
                             onClick={handleLogout}
-                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300"
                         >
                             Déconnexion
                         </button>
@@ -124,62 +151,32 @@ const ServiceClientele = () => {
                         />
                     </div>
 
-                    {/* Section État de Réparation */}
-                    <div className="mb-6">
-                        <h4 className="text-gray-700 font-bold mb-2">État de réparation</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {['En attente', 'En cours', 'Terminé'].map((etat) => (
-                                <label className="flex items-center cursor-pointer transition-transform transform hover:scale-105" key={etat}>
-                                    <input
-                                        type="radio" // Changer à radio pour une sélection unique
-                                        value={etat}
-                                        className="form-radio h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                        checked={nouveauClient.etatReparation[0] === etat} // Vérifier si l'état correspond
-                                        onChange={(e) => {
-                                            setNouveauClient({ ...nouveauClient, etatReparation: [e.target.value] }); // Mettre à jour l'état
-                                        }}
-                                    />
-                                    <span className="ml-2 text-gray-800 font-semibold hover:text-blue-600">{etat}</span>
-                                </label>
-                            ))}
-                        </div>
+                    {/* Section Dates */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        {['dateDepot', 'dateRemise'].map((field, index) => (
+                            <div className="relative" key={index}>
+                                <FaCalendarAlt className="absolute top-3 left-3 text-gray-500" />
+                                <input
+                                    type="date"
+                                    className="border border-gray-300 pl-10 p-2 w-full rounded hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={nouveauClient[field]}
+                                    onChange={(e) => setNouveauClient({ ...nouveauClient, [field]: e.target.value })}
+                                />
+                            </div>
+                        ))}
                     </div>
 
-                    {/* Section Date de Dépôt et Date de Remise */}
-                    <div className="mb-6">
-                        <h4 className="text-gray-700 font-bold mb-4">Dates</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {['dateDepot', 'dateRemise'].map((field, index) => (
-                                <div className="relative" key={index}>
-                                    <label className="block text-gray-700 font-semibold mb-1">
-                                        {field === 'dateDepot' ? 'Date de dépôt' : 'Date de remise'}
-                                    </label>
-                                    <FaCalendarAlt className="absolute top-10 left-3 text-gray-500" />
-                                    <input
-                                        type="date"
-                                        className="border border-gray-300 pl-10 p-2 w-full rounded hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        value={nouveauClient[field]}
-                                        onChange={(e) => setNouveauClient({ ...nouveauClient, [field]: e.target.value })}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
+                    
                     <button
                         onClick={ajouterClient}
-                        className="flex items-center justify-center bg-green-600 text-white px-4 py-2 rounded-md shadow-lg hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+                        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
                     >
-                        <FaPlus className="mr-2" />
+                        <FaPlus className="inline-block mr-2" />
                         Ajouter Client
                     </button>
                 </div>
-
-
-                <Footer />
-
-
             </main>
+            <Footer />
         </div>
     );
 };

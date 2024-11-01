@@ -18,11 +18,12 @@ const Sidebar = () => {
             <Link to="/repairs" className="block py-2 hover:text-blue-400">Réparations</Link>
           </li>
           <li>
-            <Link to="/invoices" className="block py-2 hover:text-blue-400">Factures</Link>
+            <Link to="/catalogue" className="block py-2 hover:text-blue-400">Catalogue</Link>
+          </li> 
+          <li>
+            <Link to="/facture" className="block py-2 hover:text-blue-400">Factures</Link>
           </li>
-          {/* <li>
-            <Link to="/statistics" className="block py-2 hover:text-blue-400">Statistiques</Link>
-          </li> */}
+          
         </ul>
       </nav>
     </aside>

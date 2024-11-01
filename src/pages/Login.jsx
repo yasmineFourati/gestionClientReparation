@@ -63,7 +63,7 @@ const Login = () => {
             />
           </div>
 
-          <div className="mb-6 relative"> {/* Added relative for positioning */}
+          <div className="mb-6 relative">   
             <label className="block text-gray-600 text-sm font-bold mb-2" htmlFor="password">
               Password
             </label>
@@ -80,7 +80,7 @@ const Login = () => {
             <button
               type="button"
               className="absolute right-3 top-10 text-gray-500" // Adjust top position for better alignment
-              onClick={() => setPasswordVisible(!passwordVisible)} // Toggle password visibility
+              onClick={() => setPasswordVisible(!passwordVisible)} 
               aria-label={passwordVisible ? 'Hide password' : 'Show password'}
             >
               <FontAwesomeIcon icon={passwordVisible ? faEyeSlash : faEye} />
@@ -90,9 +90,9 @@ const Login = () => {
           <button
             type="submit"
             className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-md transition duration-200 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={loading} // Disable button while loading
+            disabled={loading} 
           >
-            {loading ? 'Loading...' : 'Log In'} {/* Show loading state */}
+            {loading ? 'Loading...' : 'Log In'} 
           </button>
 
           {/* Uncomment if you want to add links for password recovery and sign-up */}
