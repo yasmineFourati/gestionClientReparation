@@ -8,7 +8,7 @@ const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false); // Loading state
-  const [passwordVisible, setPasswordVisible] = useState(false); // Password visibility state
+  const [passwordVisible, setPasswordVisible] = useState(false); 
   const navigate = useNavigate();
 
   const handleChange = (e) => {

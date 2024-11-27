@@ -169,14 +169,15 @@ const ServiceClientele = () => {
                     
                     <button
                         onClick={ajouterClient}
-                        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
-                    >
+                        className="flex items-center bg-green-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+                        >
                         <FaPlus className="inline-block mr-2" />
                         Ajouter Client
                     </button>
                 </div>
+                <Footer />
+
             </main>
-            <Footer />
         </div>
     );
 };
