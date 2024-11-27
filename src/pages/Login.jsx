@@ -8,7 +8,7 @@ const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false); // Loading state
-  const [passwordVisible, setPasswordVisible] = useState(false); 
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -19,7 +19,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true); // Set loading to true
+    setLoading(true); 
 
     try {
       const response = await axios.post('http://localhost:8080/api/login', credentials);
@@ -35,13 +35,22 @@ const Login = () => {
         setError('Login failed. Please try again later.');
       }
     } finally {
-      setLoading(false); // Reset loading state
+      setLoading(false); 
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-500 to-blue-800">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
+    <div 
+      className="flex items-center justify-center min-h-screen bg-cover bg-center" 
+      style={{ backgroundImage: 'url(https://st4.depositphotos.com/5586578/26307/i/450/depositphotos_263075430-stock-photo-computer-repair-service-hardware-support.jpg)' }} 
+    >
+      <div className="w-full max-w-md bg-white bg-opacity-70 rounded-lg shadow-lg p-8">
+        {/* Titre de bienvenue */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-semibold text-blue-400">Bienvenue chez RepAppBuro</h1>
+          {/* <p className="text-lg text-gray-500 mt-2">Votre partenaire pour la gestion des réparations informatiques</p> */}
+        </div>
+
         <h2 className="text-2xl font-bold text-center text-gray-700 mb-6">Login</h2>
         
         {error && <p className="text-red-500 text-center mb-4" aria-live="assertive">{error}</p>}
@@ -63,7 +72,7 @@ const Login = () => {
             />
           </div>
 
-          <div className="mb-6 relative">   
+          <div className="mb-6 relative">
             <label className="block text-gray-600 text-sm font-bold mb-2" htmlFor="password">
               Password
             </label>
@@ -79,7 +88,7 @@ const Login = () => {
             />
             <button
               type="button"
-              className="absolute right-3 top-10 text-gray-500" // Adjust top position for better alignment
+              className="absolute right-3 top-10 text-gray-500" 
               onClick={() => setPasswordVisible(!passwordVisible)} 
               aria-label={passwordVisible ? 'Hide password' : 'Show password'}
             >
@@ -90,16 +99,10 @@ const Login = () => {
           <button
             type="submit"
             className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-md transition duration-200 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={loading} 
+            disabled={loading}
           >
-            {loading ? 'Loading...' : 'Log In'} 
+            {loading ? 'Loading...' : 'Log In'}
           </button>
-
-          {/* Uncomment if you want to add links for password recovery and sign-up */}
-          {/* <div className="flex justify-between mt-4">
-            <a href="#" className="text-blue-600 hover:underline">Forgot Password?</a>
-            <a href="#" className="text-blue-600 hover:underline">Sign Up</a>
-          </div> */}
         </form>
       </div>
     </div>
