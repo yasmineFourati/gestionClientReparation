@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebarr';
 import Footer from '../components/Footer';
-import { FaClock, FaPlus, FaMinus, FaTools, FaSave } from 'react-icons/fa';
+import { FaClock, FaPlus, FaMinus, FaSave } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const Reparation = () => {
@@ -40,10 +40,11 @@ const Reparation = () => {
     const navigate = useNavigate();
 
     const piecesCatalogue = [
-        { id: 1, nom: "Pièce 1", marque: "HP" },
-        { id: 2, nom: "Pièce 2", marque: "Dell" },
-        { id: 3, nom: "Pièce 3", marque: "Lenovo" },
-        { id: 4, nom: "Pièce 4", marque: "HP" },
+        { id: 1, nom: "Processeur", marque: "HP" },
+        { id: 2, nom: "Dique dur", marque: "Dell" },
+        { id: 3, nom: "Memoire RAM", marque: "Lenovo" },
+        { id: 4, nom: "Carte Graphique", marque: "HP" },
+        { id: 5, nom: "Disque SSD", marque: "Dell" },
     ];
 
     const [selectedClient, setSelectedClient] = useState(clients[0]);
@@ -51,7 +52,7 @@ const Reparation = () => {
         ordinateur: '',
         heures: '',
         description: '',
-        piecesChangees: [''],
+        piecesChangees: [{ nom: '', marque: '' }],
     });
     const [error, setError] = useState('');
 
@@ -64,7 +65,7 @@ const Reparation = () => {
     const addPiece = () => {
         setReparation({
             ...reparation,
-            piecesChangees: [...reparation.piecesChangees, ''],
+            piecesChangees: [...reparation.piecesChangees, { nom: '', marque: '' }],
         });
     };
 
@@ -77,22 +78,26 @@ const Reparation = () => {
         }
     };
 
-    const handlePieceChange = (index, value) => {
+    const handlePieceChange = (index, field, value) => {
         const newPieces = [...reparation.piecesChangees];
-        newPieces[index] = value;
+        newPieces[index][field] = value;
+
+        if (field === 'nom') {
+            newPieces[index].marque = '';
+        }
+
         setReparation({ ...reparation, piecesChangees: newPieces });
     };
 
-    const filteredPieces = piecesCatalogue.filter(
-        (piece) => piece.marque === selectedClient.ordinateur.marque
-    );
+    const filteredPiecesByName = (name) => {
+        return piecesCatalogue.filter((piece) => piece.nom === name);
+    };
 
     const ajouterReparation = () => {
         if (!reparation.ordinateur || !reparation.heures || !reparation.description) {
             setError('Tous les champs sont requis.');
         } else {
             setError('');
-            // Handle adding the repair (e.g., API call or state update)
             console.log('Réparation ajoutée', reparation);
         }
     };
@@ -209,43 +214,56 @@ const Reparation = () => {
                         {reparation.piecesChangees.map((piece, index) => (
                             <div className="flex items-center mb-4" key={index}>
                                 <select
-                                    className="border border-gray-300 p-3 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                    value={piece}
-                                    onChange={(e) => handlePieceChange(index, e.target.value)}
+                                    className="border border-gray-300 p-3 w-1/2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    value={piece.nom}
+                                    onChange={(e) => handlePieceChange(index, 'nom', e.target.value)}
                                 >
                                     <option value="">Sélectionner une pièce</option>
-                                    {filteredPieces.map((piece) => (
-                                        <option key={piece.id} value={piece.nom}>
-                                            {piece.nom}
+                                    {piecesCatalogue.map((p) => (
+                                        <option key={p.id} value={p.nom}>
+                                            {p.nom}
                                         </option>
                                     ))}
                                 </select>
-                                <button
-                                    type="button"
-                                    onClick={removePiece}
-                                    className="ml-4 text-red-600 hover:text-red-800"
+
+                                <select
+                                    className="border border-gray-300 p-3 w-1/2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 ml-2"
+                                    value={piece.marque}
+                                    onChange={(e) => handlePieceChange(index, 'marque', e.target.value)}
                                 >
-                                    <FaMinus />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={addPiece}
-                                    className="ml-4 text-green-600 hover:text-red-800"
-                                >
-                                    <FaPlus />
-                                </button>
+                                    <option value="">Sélectionner une marque</option>
+                                    {filteredPiecesByName(piece.nom).map((p) => (
+                                        <option key={p.id} value={p.marque}>
+                                            {p.marque}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <div className="ml-2 flex space-x-2">
+                                    <button
+                                        onClick={addPiece}
+                                        className="text-green-500 p-2"
+                                    >
+                                        <FaPlus />
+                                    </button>
+                                    <button
+                                        onClick={removePiece}
+                                        className="text-red-500 p-2"
+                                    >
+                                        <FaMinus />
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
-                    <div className="flex justify-center">
-                        <button
-                            onClick={ajouterReparation}
-                            className="flex items-center bg-green-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
-                            >
-                            <FaPlus className="inline-block mr-2" /> Ajouter la Réparation
-                        </button>
-                    </div>
 
+                    <button
+                        onClick={ajouterReparation}
+                        className="flex items-center bg-green-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 mx-auto block"
+                    >
+                        <FaPlus className="inline-block mr-2" />
+                        Ajouter la Réparation
+                    </button>
                 </div>
                 <Footer />
 
