@@ -10,13 +10,13 @@ import Facture from './pages/Facture';
 import AddComponent from './pages/AddComponent';
 import Catalogue from './pages/Catalogue';
 import EditComponent from './pages/EditComponent';
+import ListeFacture from './pages/ListeFacture';
 
 function App() {
   return (
     <Router>
       <div>
         <Routes>
-
           <Route path="/" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/client" element={<ServiceClientele />} />
@@ -27,7 +27,7 @@ function App() {
           <Route path="/catalogue" element={<Catalogue />} />
           <Route path="/add-component" element={<AddComponent />} />
           <Route path="/edit-component" element={<EditComponent />} />
-
+          <Route path="/listefac" element={<ListeFacture />} />
         </Routes>
       </div>
     </Router>

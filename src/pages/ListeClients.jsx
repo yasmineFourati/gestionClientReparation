@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FaPhone, FaMapMarkerAlt, FaLaptop, FaTag, FaCalendarAlt, FaWrench, FaPlus } from 'react-icons/fa'; 
 import Sidebar from '../components/Sidebarr';
 import Footer from '../components/Footer';
@@ -36,31 +36,38 @@ const ListeClients = () => {
     ]);
 
     const [selectedClient, setSelectedClient] = useState(null);
-    const [searchInput, setSearchInput] = useState(''); 
-
-    const handleMoreInfo = (client) => {
-        setSelectedClient(selectedClient === client ? null : client);
-    };
+    const [searchInput, setSearchInput] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleLogout = () => {
-        localStorage.removeItem('authToken'); 
-        navigate('/'); 
+        localStorage.removeItem('authToken');
+        navigate('/');
     };
 
-    // Filter clients based on the search input for the client's name
-    const filteredClients = clients.filter(client =>
-        client.nom.toLowerCase().includes(searchInput.toLowerCase())
+    const handleArchiveClient = (clientId) => {
+        setLoading(true);
+        setClients(prevClients => prevClients.filter(client => client.id !== clientId));
+        setLoading(false);
+        const client = clients.find(c => c.id === clientId);
+        alert(`Le client ${client.nom} a été archivé.`);
+    };
+
+    const handleMoreInfo = (client) => {
+        setSelectedClient(prevClient => prevClient === client ? null : client);
+    };
+
+    const filteredClients = useMemo(() => 
+        clients.filter(client => client.nom.toLowerCase().includes(searchInput.toLowerCase())),
+        [clients, searchInput]
     );
 
     return (
         <div className="flex">
             <Sidebar />
             <main className="flex-1 p-10 bg-gray-200 ml-64">
-                {/* Header Section */}
                 <header className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-800">Liste des Clients</h2>
                     <div className="flex items-center">
-                        {/* Search Input */}
                         <input
                             type="text"
                             placeholder="Recherche par nom"
@@ -71,56 +78,66 @@ const ListeClients = () => {
                         <button
                             onClick={handleLogout}
                             className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300"
-                            >
+                        >
                             Déconnexion
                         </button>
                     </div>
                 </header>
 
+                {/* Clients List */}
                 <div className="bg-white rounded-lg shadow-lg p-6 mb-10">
-                    <ul className="space-y-4">
-                        {filteredClients.map(client => (
-                            <li key={client.id} className="border-b pb-4">
-                                <div className="flex justify-between items-center">
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-lg"><FaTag className="inline mr-2" /> <strong>Nom:</strong> {client.nom}</p>
-                                        <p><FaPhone className="inline mr-2" /><strong>Téléphone:</strong> {client.telephone}</p>
-                                        <p><FaMapMarkerAlt className="inline mr-2" /><strong>Adresse:</strong> {client.adresse}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => handleMoreInfo(client)}
-                                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition flex items-center"
-                                    >
-                                        {selectedClient === client ? (
-                                            <>
-                                                <FaWrench className="inline mr-2" /> Moins d'infos
-                                            </>
-                                        ) : (
-                                            <>
-                                                <FaPlus className="inline mr-2" /> Plus d'infos
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-
-                                {selectedClient === client && (
-                                    <div className="mt-4 space-y-2">
-                                        <div className="bg-gray-100 p-4 rounded-lg">
-                                            <p><FaLaptop className="inline mr-2" /><strong>Marque de l'appareil:</strong> {client.marqueAppareil}</p>
-                                            <p><FaLaptop className="inline mr-2" /><strong>Modèle de l'appareil:</strong> {client.modeleAppareil}</p>
-                                            <p><FaTag className="inline mr-2" /><strong>Numéro de série:</strong> {client.numeroSerie}</p>
-                                            <p><FaWrench className="inline mr-2" /><strong>Symptômes de la panne:</strong> {client.symptomesPanne}</p>
-                                            <p><FaCalendarAlt className="inline mr-2" /><strong>Date de dépôt:</strong> {client.dateDepot}</p>
-                                            <p><FaCalendarAlt className="inline mr-2" /><strong>Date de remise:</strong> {client.dateRemise}</p>
-                                            <p><FaWrench className="inline mr-2" /><strong>État de réparation:</strong> {client.etatReparation}</p>
+                    {loading ? (
+                        <div className="flex justify-center items-center">
+                            <div className="loader">Chargement...</div>
+                        </div>
+                    ) : (
+                        <ul className="space-y-4">
+                            {filteredClients.map(client => (
+                                <li key={client.id} className="border-b pb-4">
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex-1">
+                                            <p className="font-semibold text-lg"><FaTag className="inline mr-2" /> <strong>Nom:</strong> {client.nom}</p>
+                                            <p><FaPhone className="inline mr-2" /><strong>Téléphone:</strong> {client.telephone}</p>
+                                            <p><FaMapMarkerAlt className="inline mr-2" /><strong>Adresse:</strong> {client.adresse}</p>
+                                        </div>
+                                        <div className="flex space-x-2">
+                                            <button
+                                                onClick={() => handleMoreInfo(client)}
+                                                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition flex items-center"
+                                            >
+                                                {selectedClient === client ? (
+                                                    <><FaWrench className="inline mr-2" /> Moins d'infos</>
+                                                ) : (
+                                                    <><FaPlus className="inline mr-2" /> Plus d'infos</>
+                                                )}
+                                            </button>
+                                            <button
+                                                onClick={() => handleArchiveClient(client.id)}
+                                                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition flex items-center"
+                                            >
+                                                Archiver
+                                            </button>
                                         </div>
                                     </div>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
+
+                                    {selectedClient === client && (
+                                        <div className="mt-4 space-y-2">
+                                            <div className="bg-gray-100 p-4 rounded-lg">
+                                                <p><FaLaptop className="inline mr-2" /><strong>Marque de l'appareil:</strong> {client.marqueAppareil}</p>
+                                                <p><FaLaptop className="inline mr-2" /><strong>Modèle de l'appareil:</strong> {client.modeleAppareil}</p>
+                                                <p><FaTag className="inline mr-2" /><strong>Numéro de série:</strong> {client.numeroSerie}</p>
+                                                <p><FaWrench className="inline mr-2" /><strong>Symptômes de la panne:</strong> {client.symptomesPanne}</p>
+                                                <p><FaCalendarAlt className="inline mr-2" /><strong>Date de dépôt:</strong> {client.dateDepot}</p>
+                                                <p><FaCalendarAlt className="inline mr-2" /><strong>Date de remise:</strong> {client.dateRemise}</p>
+                                                <p><FaWrench className="inline mr-2" /><strong>État de réparation:</strong> {client.etatReparation}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
-                <br></br>
                 <Footer />
             </main>
         </div>

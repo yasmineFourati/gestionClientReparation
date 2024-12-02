@@ -44,20 +44,23 @@ const Catalogue = () => {
     };
 
     const handleDelete = (code) => {
-        const confirmDelete = window.confirm('Êtes-vous sûr de vouloir supprimer cette pièce ?');
+        const pieceToDelete = piecesFiltrees.find(piece => piece.code === code);
+        const confirmDelete = window.confirm(`Êtes-vous sûr de vouloir supprimer le/a ${pieceToDelete.nom} ${pieceToDelete.marque} ?`);
+        
         if (confirmDelete) {
             const updatedPieces = piecesFiltrees.filter(piece => piece.code !== code);
             setPiecesFiltrees(updatedPieces);
         }
     };
+    
 
     return (
         <div className="flex min-h-screen bg-gray-50">
             <Sidebar />
             <div className="flex-1 p-8 ml-64">
-                <header className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-blue-800">Catalogue des Pièces</h2>
-                    <div className="flex gap-4">
+            <header className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-800">Catalogue des pièces</h2>
+                <div className="flex gap-4">
                         <button
                             onClick={ajouterComponent}
                             className="flex items-center bg-green-600 text-white px-4 py-2 rounded-md shadow hover:bg-green-700 transition duration-300"

@@ -166,14 +166,17 @@ const ServiceClientele = () => {
                         ))}
                     </div>
 
-                    
-                    <button
-                        onClick={ajouterClient}
-                        className="flex items-center bg-green-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+
+                    <div className="flex justify-center mt-4">
+                        <button
+                            onClick={ajouterClient}
+                            className="flex items-center bg-green-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
                         >
-                        <FaPlus className="inline-block mr-2" />
-                        Ajouter Client
-                    </button>
+                            <FaPlus className="inline-block mr-2" />
+                            Ajouter Client
+                        </button>
+                    </div>
+
                 </div>
                 <Footer />
 

@@ -75,6 +75,10 @@ const Facture = () => {
     let taxeGlobal = 0;
     let fraisExpeditionGlobal = 0;
 
+    const handleNavigateToFacturesList = () => {
+        navigate('/listefac');
+    };
+
     return (
         <div className="flex">
             <style>
@@ -93,6 +97,12 @@ const Facture = () => {
             <Sidebar className="no-print" />
             <div className="flex-1 p-10 bg-gray-100 ml-64 min-h-screen print-page">
                 <div className="flex justify-end mb-6 no-print">
+                <button
+                        onClick={handleNavigateToFacturesList}
+                        className="bg-gray-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-yellow-700 transition duration-300 mr-4"
+                    >
+                        Liste des Factures
+                    </button>
                     <button
                         onClick={handleLogout}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300"

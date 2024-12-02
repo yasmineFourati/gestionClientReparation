@@ -47,6 +47,11 @@ const ListeRep = () => {
         navigate('/');
     };
 
+    const handleArchive = (id) => {
+        setReparations(reparations.filter(reparation => reparation.id !== id));
+        alert(`La réparation avec le dossier ${id} a été archivée.`);
+    };
+
     const filteredReparations = reparations.filter(reparation =>
         reparation.numeroDossier.toLowerCase().includes(searchInput.toLowerCase())
     );
@@ -82,24 +87,41 @@ const ListeRep = () => {
                             <li key={reparation.id} className="border-b pb-4">
                                 <div className="flex justify-between items-center">
                                     <div className="flex-1">
-                                        <p className="font-semibold text-lg"><FaTag className="inline mr-2" /> <strong>Numéro de Dossier:</strong> {reparation.numeroDossier}</p>
-                                        <p><FaUser className="inline mr-2" /><strong>Client:</strong> {reparation.clientNom}</p>
-                                        <p><FaLaptop className="inline mr-2" /><strong>Appareil:</strong> {reparation.appareil}</p>
+                                        <p className="font-semibold text-lg">
+                                            <FaTag className="inline mr-2" /> 
+                                            <strong>Numéro de Dossier:</strong> {reparation.numeroDossier}
+                                        </p>
+                                        <p>
+                                            <FaUser className="inline mr-2" />
+                                            <strong>Client:</strong> {reparation.clientNom}
+                                        </p>
+                                        <p>
+                                            <FaLaptop className="inline mr-2" />
+                                            <strong>Appareil:</strong> {reparation.appareil}
+                                        </p>
                                     </div>
-                                    <button
-                                        onClick={() => handleMoreInfo(reparation)}
-                                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition flex items-center"
-                                    >
-                                        {selectedReparation === reparation ? (
-                                            <>
-                                                <FaTools className="inline mr-2" /> Moins d'infos
-                                            </>
-                                        ) : (
-                                            <>
-                                                <FaPlus className="inline mr-2" /> Plus d'infos
-                                            </>
-                                        )}
-                                    </button>
+                                    <div className="flex items-center space-x-2">
+                                        <button
+                                            onClick={() => handleMoreInfo(reparation)}
+                                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition flex items-center"
+                                        >
+                                            {selectedReparation === reparation ? (
+                                                <>
+                                                    <FaTools className="inline mr-2" /> Moins d'infos
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <FaPlus className="inline mr-2" /> Plus d'infos
+                                                </>
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => handleArchive(reparation.id)}
+                                            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition flex items-center"
+                                        >
+                                            Archiver
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {selectedReparation === reparation && (
