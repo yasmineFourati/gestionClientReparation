@@ -5,12 +5,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 
 const Login = () => {
-  const [credentials, setCredentials] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false); // Loading state
-  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [credentials, setCredentials] = useState({ username: '', password: '' }); 
+  const [error, setError] = useState(''); 
+  const [loading, setLoading] = useState(false); 
+  const [passwordVisible, setPasswordVisible] = useState(false); 
   const navigate = useNavigate();
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setCredentials((prev) => ({ ...prev, [name]: value }));
@@ -18,21 +17,35 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError(''); 
     setLoading(true); 
 
     try {
-      const response = await axios.post('http://localhost:8080/api/login', credentials);
+      const response = await axios.post('http://localhost:8090/api/login', null, {
+        params: {
+          username: credentials.username,
+          motDePasse: credentials.password,
+        },
+      });
 
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        navigate('/dashboard');
+      console.log('Login response:', response); 
+
+      // If the response contains a role, save it and navigate
+      if (response.data.role) {
+        console.log('Role found:', response.data.role); // Log the role to ensure it's correct
+        localStorage.setItem('role', response.data.role);
+        localStorage.setItem('username', response.data.username); // Save username in localStorage
+        navigate('/dashboard'); 
+      } else {
+        console.log('No role found in response'); // Log a message if no role is found
       }
     } catch (err) {
+      // Handle errors
+      console.error('Error during login:', err); // Log the error for debugging
       if (err.response && err.response.data) {
-        setError(err.response.data.message || 'Login failed. Please check your email and password.');
+        setError(err.response.data.message || 'Login failed. Please check your username and password.');
       } else {
-        setError('Login failed. Please try again later.');
+        setError('Unable to connect. Please try again later.');
       }
     } finally {
       setLoading(false); 
@@ -40,68 +53,69 @@ const Login = () => {
   };
 
   return (
-    <div 
-      className="flex items-center justify-center min-h-screen bg-cover bg-center" 
-      style={{ backgroundImage: 'url(https://st4.depositphotos.com/5586578/26307/i/450/depositphotos_263075430-stock-photo-computer-repair-service-hardware-support.jpg)' }} 
-    >
-      <div className="w-full max-w-md bg-white bg-opacity-70 rounded-lg shadow-lg p-8">
-        {/* Titre de bienvenue */}
+    <div
+    className="flex items-center justify-center min-h-screen bg-cover bg-center"
+    style={{ backgroundImage: "url('/pexels-fauxels-3183188.jpg')" }}  >
+  
+      <div className="w-full max-w-md bg-white bg-opacity-80 rounded-lg shadow-lg p-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-semibold text-blue-400">Bienvenue chez RepAppBuro</h1>
-          {/* <p className="text-lg text-gray-500 mt-2">Votre partenaire pour la gestion des réparations informatiques</p> */}
+        <h1 className="text-4xl font-bold text-blue-900 shadow-lg text-center mb-5">RepAppBuro</h1>
         </div>
-
-        <h2 className="text-2xl font-bold text-center text-gray-700 mb-6">Login</h2>
         
+        {/* Display error messages */}
         {error && <p className="text-red-500 text-center mb-4" aria-live="assertive">{error}</p>}
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-600 text-sm font-bold mb-2" htmlFor="email">
-              Email
+          {/* Username input */}
+          <div className="mb-6">
+            <label className="block text-gray-600 text-sm font-medium mb-2" htmlFor="username">
+              Nom d'utilisateur
             </label>
             <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="Entrez votre email"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={credentials.email}
+              type="text"
+              id="username"
+              name="username"
+              placeholder="Entrez votre nom d'utilisateur"
+              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out"
+              value={credentials.username}
               onChange={handleChange}
               required
             />
           </div>
 
+          {/* Password input */}
           <div className="mb-6 relative">
-            <label className="block text-gray-600 text-sm font-bold mb-2" htmlFor="password">
-              Password
+            <label className="block text-gray-600 text-sm font-medium mb-2" htmlFor="password">
+              Mot de passe
             </label>
             <input
               type={passwordVisible ? 'text' : 'password'}
               id="password"
               name="password"
               placeholder="Entrez votre mot de passe"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out"
               value={credentials.password}
               onChange={handleChange}
               required
             />
+            {/* Password visibility toggle */}
             <button
               type="button"
-              className="absolute right-3 top-10 text-gray-500" 
-              onClick={() => setPasswordVisible(!passwordVisible)} 
-              aria-label={passwordVisible ? 'Hide password' : 'Show password'}
+              className="absolute right-3 top-10 text-gray-500"
+              onClick={() => setPasswordVisible(!passwordVisible)}
+              aria-label={passwordVisible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
             >
               <FontAwesomeIcon icon={passwordVisible ? faEyeSlash : faEye} />
             </button>
           </div>
 
+          {/* Submit button */}
           <button
             type="submit"
-            className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-md transition duration-200 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             disabled={loading}
           >
-            {loading ? 'Loading...' : 'Log In'}
+            {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
       </div>

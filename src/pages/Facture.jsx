@@ -1,47 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebarr';
 import Footer from '../components/Footer';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-const fetchClientsData = () => {
-    return [
-        {
-            id: 1,
-            name: 'Yasmine',
-            reparations: [
-                { id: 'R001', clientName: 'Yasmine', clientAddress: 'Centre Ville', description: 'Réparation de la carte mère', prixUnitaire: 1500, quantite: 1 },
-                { id: 'R002', clientName: 'Yasmine', clientAddress: 'Centre Ville', description: 'Remplacement de la batterie', prixUnitaire: 800, quantite: 1 }
-            ]
-        },
-        {
-            id: 2,
-            name: 'Baya',
-            reparations: [
-                { id: 'R003', clientName: 'Baya', clientAddress: 'Soukra', description: 'Remplacement de l\'écran', prixUnitaire: 1200, quantite: 1 },
-                { id: 'R004', clientName: 'Baya', clientAddress: 'Soukra', description: 'Réparation du disque dur', prixUnitaire: 2000, quantite: 1 }
-            ]
-        },
-        {
-            id: 3,
-            name: 'Amina',
-            reparations: [
-                { id: 'R005', clientName: 'Amina', clientAddress: 'Ariana', description: 'Changement de la RAM', prixUnitaire: 400, quantite: 2 },
-                { id: 'R006', clientName: 'Amina', clientAddress: 'Ariana', description: 'Nettoyage complet', prixUnitaire: 300, quantite: 1 }
-            ]
-        },
-        {
-            id: 4,
-            name: 'Ibrahim',
-            reparations: [
-                { id: 'R007', clientName: 'Ibrahim', clientAddress: 'Lac 2', description: 'Réparation de l\'alimentation', prixUnitaire: 1000, quantite: 1 }
-            ]
-        }
-    ];
+const fetchReparations = async () => {
+    try {
+        const response = await axios.get('http://localhost:8090/reparations');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching reparations:', error);
+        return [];
+    }
 };
 
-const calculateAmounts = (prixUnitaire, quantite, avecLivraison) => {
-    const sousTotal = prixUnitaire * quantite;
-    const taxe = sousTotal * 0.2;
+const calculateAmounts = (tarifHMO, tempsMO, piecesRechange, avecLivraison) => {
+    let sousTotal = tarifHMO * tempsMO;
+
+
+    piecesRechange.forEach(piece => {
+        sousTotal += piece.prixTTC;
+    });
+
+    const taxe = sousTotal * 0.2; // Taxe de 20 %
     const fraisExpedition = avecLivraison ? 15 : 0;
     const total = sousTotal + taxe + fraisExpedition;
 
@@ -49,15 +30,32 @@ const calculateAmounts = (prixUnitaire, quantite, avecLivraison) => {
 };
 
 const Facture = () => {
-    const location = useLocation();
     const navigate = useNavigate();
-    const [clientsData, setClientsData] = useState([]);
-    const [selectedClient, setSelectedClient] = useState('');
+    const [reparationsData, setReparationsData] = useState([]);
+    const [selectedReparation, setSelectedReparation] = useState();
     const [avecLivraison, setAvecLivraison] = useState(false);
+    const [totals, setTotals] = useState({
+        totalFacture: 0,
+        sousTotalGlobal: 0,
+        taxeGlobal: 0,
+        fraisExpeditionGlobal: 0,
+    });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        const data = fetchClientsData();
-        setClientsData(data);
+        const getData = async () => {
+            try {
+                const reparations = await fetchReparations();
+                setReparationsData(reparations);
+            } catch (error) {
+                console.error('Error fetching reparations:', error);
+                setError('Impossible de récupérer les réparations');
+            } finally {
+                setLoading(false);
+            }
+        };
+        getData();
     }, []);
 
     const handleLogout = () => {
@@ -68,37 +66,79 @@ const Facture = () => {
         window.print();
     };
 
-    const selectedClientData = clientsData.find(client => client.name === selectedClient);
+    useEffect(() => {
+        if (selectedReparation) {
+            const { tarifHMO, tempsMO, pieceRechange } = selectedReparation;
+            const { sousTotal, taxe, fraisExpedition, total } = calculateAmounts(
+                tarifHMO,
+                tempsMO,
+                pieceRechange ? [pieceRechange] : [],
+                avecLivraison
+            );
 
-    let totalFacture = 0;
-    let sousTotalGlobal = 0;
-    let taxeGlobal = 0;
-    let fraisExpeditionGlobal = 0;
+            setTotals({
+                totalFacture: total,
+                sousTotalGlobal: sousTotal,
+                taxeGlobal: taxe,
+                fraisExpeditionGlobal: fraisExpedition,
+            });
+        }
+    }, [selectedReparation, avecLivraison]);
 
-    const handleNavigateToFacturesList = () => {
-        navigate('/listefac');
+    const handleAddFacture = async (e) => {
+        e.preventDefault();
+
+        if (!selectedReparation || !selectedReparation.id) {
+            alert("Veuillez sélectionner une réparation.");
+            return;
+        }
+
+        // Générer un numéro de facture (par exemple, un numéro aléatoire ou une séquence)
+        const factureNumero = `FAC-${Date.now()}`;
+
+        const dataToSend = {
+            reparation: { id: selectedReparation.id },
+            date: new Date().toISOString(),
+            montantTotal: totals.totalFacture,
+            numero: factureNumero,  // Ajouter un numéro de facture
+        };
+
+        console.log("Données envoyées pour la facture :", dataToSend);
+
+        try {
+            const response = await axios.post("http://localhost:8090/facture", dataToSend);
+            console.log("Réponse du serveur :", response.data);
+            navigate("/listefac");
+        } catch (error) {
+            console.error("Erreur lors de la création de la facture :", error.response?.data || error.message);
+        }
     };
+
+
+
+    if (loading) {
+        return <div className="flex justify-center items-center min-h-screen">Chargement...</div>;
+    }
+
+    if (error) {
+        return <div className="flex justify-center items-center min-h-screen">{error}</div>;
+    }
 
     return (
         <div className="flex">
             <style>
                 {`
-            @media print {
-                .no-print { 
-                    display: none !important; 
-                }
-                .print-page { 
-                    padding: 20px; 
-                    width: 100%; 
-                }
-            }
-        `}
+                    @media print {
+                        .no-print { display: none !important; }
+                        .print-page { padding: 20px; width: 100%; }
+                    }
+                `}
             </style>
             <Sidebar className="no-print" />
             <div className="flex-1 p-10 bg-gray-100 ml-64 min-h-screen print-page">
                 <div className="flex justify-end mb-6 no-print">
-                <button
-                        onClick={handleNavigateToFacturesList}
+                    <button
+                        onClick={() => navigate('/listefac')}
                         className="bg-gray-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-yellow-700 transition duration-300 mr-4"
                     >
                         Liste des Factures
@@ -112,127 +152,156 @@ const Facture = () => {
                 </div>
 
                 <div className="bg-white shadow-md rounded-lg p-8 max-w-4xl mx-auto">
-                    <h1 className="text-3xl font-bold text-center mb-8">Facture #{selectedClientData?.reparations?.[0]?.id || '0001'}</h1>
+                    <h1 className="text-4xl font-extrabold text-center mb-8 text-blue-600">Facture #{selectedReparation?.id || '0001'}</h1>
 
                     <div className="mb-8 text-center">
-                        <h2 className="text-lg font-semibold">Société RepAppBuro</h2>
-                        <p>123 Avenue Habib Bourgiba, Sfax</p>
+                        <h2 className="text-xl font-semibold text-gray-700">Société RepAppBuro</h2>
+                        <p className="text-sm text-gray-500">123 Avenue Habib Bourgiba, Sfax</p>
                     </div>
 
                     <div className="mb-8">
-                        <label htmlFor="client-select" className="block mb-3 font-medium">Choisir un client :</label>
+                        <label htmlFor="reparation-select" className="block mb-3 font-medium text-gray-700">Choisir une Réparation :</label>
                         <select
-                            id="client-select"
-                            value={selectedClient}
-                            onChange={(e) => setSelectedClient(e.target.value)}
+                            id="reparation-select"
+                            value={selectedReparation?.id || ''}
+                            onChange={(e) => {
+                                const selected = reparationsData.find(reparation => reparation.id === parseInt(e.target.value));
+                                setSelectedReparation(selected);
+                            }}
                             className="border p-2 rounded-lg w-full mb-4"
                         >
-                            <option value="">-- Sélectionnez un client --</option>
-                            {clientsData.map(client => (
-                                <option key={client.id} value={client.name}>{client.name}</option>
+                            <option value="">-- Sélectionnez une réparation --</option>
+                            {reparationsData.map(reparation => (
+                                <option key={reparation.id} value={reparation.id}>
+                                    {reparation.demandeReparation.appareil.marque} ({reparation.demandeReparation.appareil.modele}) - {reparation.demandeReparation.client.nom}
+                                </option>
                             ))}
                         </select>
 
-                        {selectedClientData && (
-                            <div className="text-gray-700">
-                                <p>Date: {new Date().toLocaleDateString()}</p>
-                                <p>À: {selectedClientData.name}</p>
-                                <p>Adresse: {selectedClientData.reparations[0].clientAddress}</p>
+                        {selectedReparation && (
+                            <div className="text-gray-700 mb-4 p-4 bg-gray-50 border rounded-lg">
+                                <p><strong>Date:</strong> {new Date(selectedReparation.dateRep).toLocaleDateString()}</p>
+                                <p><strong>Client:</strong> {selectedReparation.demandeReparation.client.nom}</p>
+                                <p><strong>Adresse:</strong> {selectedReparation.demandeReparation.client.adresse}</p>
+                                <p><strong>Numéro de téléphone:</strong> {selectedReparation.demandeReparation.client.numTel}</p>
                             </div>
                         )}
                     </div>
 
-                    <div className="mb-8">
-                        <h3 className="font-semibold mb-2">Instructions de livraison :</h3>
-                        <p>Merci de livrer dans les meilleurs délais.</p>
-                    </div>
-
-                    <div className="mb-8">
-                        <h3 className="font-semibold mb-2">Options de livraison :</h3>
-                        <label>
+                    <div className="mt-4 flex space-x-6">
+                        <label className="flex items-center space-x-2">
                             <input
                                 type="radio"
-                                value="avec"
-                                checked={avecLivraison}
+                                value="avecLivraison"
+                                checked={avecLivraison === true}
                                 onChange={() => setAvecLivraison(true)}
-                                className="mr-2"
+                                className="form-radio text-blue-500"
                             />
-                            Avec livraison
+                            <span className="text-sm text-gray-700">Avec livraison</span>
                         </label>
-                        <label className="ml-4">
+
+                        <label className="flex items-center space-x-2">
                             <input
                                 type="radio"
-                                value="sans"
-                                checked={!avecLivraison}
+                                value="sansLivraison"
+                                checked={avecLivraison === false}
                                 onChange={() => setAvecLivraison(false)}
-                                className="mr-2"
+                                className="form-radio text-blue-500"
                             />
-                            Sans livraison
+                            <span className="text-sm text-gray-700">Sans livraison</span>
                         </label>
                     </div>
 
-                    <table className="w-full mb-8 text-gray-700">
-                        <thead>
-                            <tr className="bg-gray-200">
-                                <th className="border px-4 py-2">Description</th>
-                                <th className="border px-4 py-2">Quantité</th>
-                                <th className="border px-4 py-2">Prix unitaire</th>
-                                <th className="border px-4 py-2">Sous-total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {selectedClientData?.reparations?.map((reparation) => {
-                                const { sousTotal, taxe, fraisExpedition, total } = calculateAmounts(
-                                    reparation.prixUnitaire,
-                                    reparation.quantite,
-                                    avecLivraison
-                                );
+                    {selectedReparation && (
+                        <table className="w-full mb-8 border-collapse border border-gray-300">
+                            <thead>
+                                <tr className="bg-gray-200">
+                                    <th className="border p-2 text-left">Description</th>
+                                    <th className="border p-2 text-left">Prix Unitaire</th>
+                                    <th className="border p-2 text-left">Pièces Changées</th>
+                                    <th className="border p-2 text-left">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="bg-white">
+                                    <td className="border p-2">{selectedReparation.description}</td>
+                                    <td className="border p-2">{selectedReparation.tarifHMO} TND</td>
+                                    <td className="border p-2">
+                                        {selectedReparation.pieceRechange ? (
+                                            <p>{selectedReparation.pieceRechange.nom} ({selectedReparation.pieceRechange.prixTTC} TND)</p>
+                                        ) : (
+                                            <p>Aucune pièce changée</p>
+                                        )}
+                                    </td>
+                                    <td className="border p-2">{totals.totalFacture.toFixed(2)} TND</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    )}
 
-                                sousTotalGlobal += sousTotal;
-                                taxeGlobal += taxe;
-                                fraisExpeditionGlobal += fraisExpedition;
-                                totalFacture += total;
-
-                                return (
-                                    <tr key={reparation.id} className="border-t">
-                                        <td className="border px-4 py-2">{reparation.description}</td>
-                                        <td className="border px-4 py-2">{reparation.quantite}</td>
-                                        <td className="border px-4 py-2">{reparation.prixUnitaire} TDN</td>
-                                        <td className="border px-4 py-2">{sousTotal.toFixed(2)} TDN</td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-
-                    <div className="text-gray-700 mb-8">
-                        <div className="flex justify-between">
-                            <p>Sous-total des réparations</p>
-                            <p>{sousTotalGlobal.toFixed(2)} TDN</p>
-                        </div>
-                        <div className="flex justify-between">
-                            <p>Taxe (20%)</p>
-                            <p>{taxeGlobal.toFixed(2)} TDN</p>
-                        </div>
-                        <div className="flex justify-between">
-                            <p>Frais de livraison</p>
-                            <p>{fraisExpeditionGlobal.toFixed(2)} TDN</p>
-                        </div>
-                        <div className="flex justify-between font-bold text-lg mt-4">
-                            <p>Total facture</p>
-                            <p>{totalFacture.toFixed(2)} TDN</p>
-                        </div>
+                    <div className="bg-gray-50 p-4 rounded-lg flex flex-col items-center text-center">
+                        <p className="font-medium">
+                            <span className="text-gray-700">Sous-total: </span>
+                            {totals.sousTotalGlobal.toFixed(2)} TND
+                        </p>
+                        <p className="font-medium">
+                            <span className="text-gray-700">Taxe (20%): </span>
+                            {totals.taxeGlobal.toFixed(2)} TND
+                        </p>
+                        <p className="font-medium">
+                            <span className="text-gray-700">Frais d'expédition: </span>
+                            {totals.fraisExpeditionGlobal.toFixed(2)} TND
+                        </p>
+                        <p className="font-bold text-lg text-blue-600">
+                            <span className="text-gray-700">Total: </span>
+                            {totals.totalFacture.toFixed(2)} TND
+                        </p>
                     </div>
 
-                    <div className="flex justify-center mt-10 no-print">
+                    <div className="flex justify-center space-x-4">
                         <button
                             onClick={handlePrint}
-                            className={`bg-green-600 text-white px-6 py-2 rounded-lg shadow-lg hover:bg-green-700 transition duration-300 ${!selectedClientData ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            disabled={!selectedClientData} 
+                            className={`bg-green-600 text-white px-4 py-2 mt-6 rounded-lg shadow-lg hover:bg-green-700 transition duration-300 no-print flex items-center space-x-2 ${!selectedReparation ? 'cursor-not-allowed opacity-50' : ''}`}
+                            disabled={!selectedReparation}
                         >
-                            Imprimer
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M15 10l4.5-4.5M15 10l4.5 4.5M15 10h6M3 14h6m0 0l4.5 4.5M9 14l-4.5 4.5M9 14H3m0 0V3m0 11h6m0 0h6M9 14H3m6 0H9M9 14H9m0 0h0M9 14h0M9 14m0 0H9m0 0"
+                                />
+                            </svg>
+                            <span>Imprimer</span>
+                        </button>
+                        <button
+                            onClick={handleAddFacture}
+                            className="bg-yellow-600 text-white px-4 py-2 mt-6 rounded-lg shadow-lg hover:bg-yellow-700 transition duration-300 no-print flex items-center space-x-2"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M12 4v16m8-8H4"
+                                />
+                            </svg>
+                            <span>Ajouter Facture</span>
                         </button>
                     </div>
+
 
                 </div>
                 <br />

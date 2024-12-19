@@ -1,70 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebarr';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
-import { FaUser, FaPhone, FaHome, FaLaptop, FaBarcode, FaCalendarAlt, FaPlus } from 'react-icons/fa';
-///////////la redirection vers la liste des clients en ajoutant un client (bouton onclick)
+import { FaUser, FaPhone, FaHome, FaLaptop, FaBarcode, FaPlus } from 'react-icons/fa';
+import axios from 'axios';
+
 const ServiceClientele = () => {
     const navigate = useNavigate();
 
-    const [clients, setClients] = useState([
-        { id: 1, nom: 'Soussou', telephone: '123456789', adresse: 'manzel cheker', referenceOrdinateur: 'REF001', etatReparation: 'En cours' },
-        { id: 2, nom: 'Pablo', telephone: '987654321', adresse: 'matar', referenceOrdinateur: 'REF002', etatReparation: 'Terminé' }
-    ]);
-
+    const [clients, setClients] = useState([]);
     const [nouveauClient, setNouveauClient] = useState({
         nom: '',
-        telephone: '',
         adresse: '',
-        marqueAppareil: '',
-        modeleAppareil: '',
-        numeroSerie: '',
-        symptomesPanne: '',
-        dateDepot: '',
-        dateRemise: '',
-        etatReparation: 'En attente de confirmation',
+        numTel: '',
     });
-
+    const [nouvelAppareil, setNouvelAppareil] = useState({
+        marque: '',
+        modele: '',
+        numSerie: '',
+    });
     const [error, setError] = useState('');
+    const [appareils, setAppareils] = useState([]);
+    const [isClientAdded, setIsClientAdded] = useState(false); // Nouvel état
+
+    useEffect(() => {
+        axios.get('http://localhost:8090/clients')
+            .then(response => setClients(response.data))
+            .catch(error => console.error("Problème de récupération des clients:", error));
+
+        axios.get('http://localhost:8090/appareils')
+            .then(response => setAppareils(response.data))
+            .catch(error => console.error("Problème de récupération des appareils:", error));
+    }, []);
 
     const ajouterClient = (e) => {
         e.preventDefault();
-        const isEmpty = Object.values(nouveauClient).some(value => value === '');
-        if (isEmpty) {
-            setError('Tous les champs sont obligatoires.');
+        
+        if (Object.values(nouveauClient).some(value => value === '')) {
+            setError('Tous les champs client sont obligatoires.');
             return;
         }
 
-        const clientExists = clients.some(client =>
-            client.nom === nouveauClient.nom &&
-            client.telephone === nouveauClient.telephone &&
-            client.adresse === nouveauClient.adresse
-        );
+        axios.post('http://localhost:8090/client', nouveauClient)
+            .then(response => {
+                setClients([...clients, response.data]);
+                setNouveauClient({ nom: '', adresse: '', numTel: '' });
+                setError('');
+                setIsClientAdded(true); // Désactiver la section client
+                navigate('/listeclient'); // Redirection vers la liste des clients
+            })
+            .catch(error => {
+                console.error("Erreur lors de l'ajout du client:", error.response || error);
+                setError('Une erreur est survenue lors de l\'ajout du client.');
+            });
+    };
 
-        if (clientExists) {
-            setError('Ce client existe déjà.');
+    const ajouterAppareil = (e) => {
+        e.preventDefault();
+        if (Object.values(nouvelAppareil).some(value => value === '')) {
+            setError('Tous les champs appareil sont obligatoires.');
             return;
         }
 
-        const newClient = { ...nouveauClient, id: clients.length + 1 };
-        setClients(prevClients => [...prevClients, newClient]);
-
-        setNouveauClient({
-            nom: '',
-            telephone: '',
-            adresse: '',
-            marqueAppareil: '',
-            modeleAppareil: '',
-            numeroSerie: '',
-            symptomesPanne: '',
-            dateDepot: '',
-            dateRemise: '',
-            etatReparation: 'En attente de confirmation',
-        });
-        setError('');
-        console.log('Clients après ajout:', [...clients, newClient]);
-
-        navigate('/listeclient');
+        axios.post('http://localhost:8090/appareil', nouvelAppareil)
+            .then(response => {
+                setAppareils([...appareils, response.data]);
+                setNouvelAppareil({ marque: '', modele: '', numSerie: '' });
+                setError('');
+                navigate('/listeapp');
+            })
+            .catch(error => {
+                console.error("Erreur lors de l'ajout de l'appareil:", error.response || error);
+                setError('Une erreur est survenue lors de l\'ajout de l\'appareil.');
+            });
     };
 
     const handleLogout = () => {
@@ -81,9 +89,15 @@ const ServiceClientele = () => {
                     <div className="flex items-center">
                         <button
                             onClick={() => navigate('/listeclient')}
-                            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition mr-4"
+                            className="bg-yellow-700 text-white px-4 py-2 rounded hover:bg-yellow-500 transition mr-4"
                         >
                             Liste des Clients
+                        </button>
+                        <button
+                            onClick={() => navigate('/listeapp')}
+                            className="bg-yellow-700 text-white px-4 py-2 rounded hover:bg-yellow-500 transition mr-4"
+                        >
+                            Liste des Appareils
                         </button>
                         <button
                             onClick={handleLogout}
@@ -94,92 +108,76 @@ const ServiceClientele = () => {
                     </div>
                 </header>
 
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                {/* Section Client */}
+                <div
+                    className={`bg-white rounded-lg shadow-lg p-6 mb-6 ${
+                        isClientAdded ? 'opacity-50 pointer-events-none' : ''
+                    }`}
+                >
                     <h3 className="text-lg font-bold mb-4">Ajouter un Nouveau Client</h3>
                     {error && <p className="text-red-500 mb-4">{error}</p>}
 
-                    {/* Section Informations Client */}
-                    <div className="mb-6">
-                        <h4 className="text-gray-700 font-bold mb-2">Informations sur le client</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {['nom', 'telephone', 'adresse'].map((field, index) => (
-                                <div className="relative" key={index}>
-                                    {field === 'nom' && <FaUser className="absolute top-3 left-3 text-gray-500" />}
-                                    {field === 'telephone' && <FaPhone className="absolute top-3 left-3 text-gray-500" />}
-                                    {field === 'adresse' && <FaHome className="absolute top-3 left-3 text-gray-500" />}
-                                    <input
-                                        type="text"
-                                        placeholder={`Entrer ${field === 'nom' ? 'le nom' : field === 'telephone' ? 'le téléphone' : 'l\'adresse'}`}
-                                        className="border border-gray-300 pl-10 p-2 w-full rounded hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        value={nouveauClient[field]}
-                                        onChange={(e) => setNouveauClient({ ...nouveauClient, [field]: e.target.value })}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Section Informations Appareil */}
-                    <div className="mb-6">
-                        <h4 className="text-gray-700 font-bold mb-2">Informations sur l'appareil</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {['marqueAppareil', 'modeleAppareil', 'numeroSerie'].map((field, index) => (
-                                <div className="relative" key={index}>
-                                    {field === 'marqueAppareil' && <FaLaptop className="absolute top-3 left-3 text-gray-500" />}
-                                    {field === 'modeleAppareil' && <FaLaptop className="absolute top-3 left-3 text-gray-500" />}
-                                    {field === 'numeroSerie' && <FaBarcode className="absolute top-3 left-3 text-gray-500" />}
-                                    <input
-                                        type="text"
-                                        placeholder={`Entrer ${field === 'marqueAppareil' ? 'la marque' : field === 'modeleAppareil' ? 'le modèle' : 'le numéro de série'}`}
-                                        className="border border-gray-300 pl-10 p-2 w-full rounded hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        value={nouveauClient[field]}
-                                        onChange={(e) => setNouveauClient({ ...nouveauClient, [field]: e.target.value })}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Section Symptômes de Panne */}
-                    <div className="mb-6">
-                        <h4 className="text-gray-700 font-bold mb-2">Symptômes de la panne</h4>
-                        <textarea
-                            placeholder="Décrivez les symptômes de la panne"
-                            className="border border-gray-300 p-2 w-full rounded hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={nouveauClient.symptomesPanne}
-                            onChange={(e) => setNouveauClient({ ...nouveauClient, symptomesPanne: e.target.value })}
-                        />
-                    </div>
-
-                    {/* Section Dates */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        {['dateDepot', 'dateRemise'].map((field, index) => (
+                        {['nom', 'numTel', 'adresse'].map((field, index) => (
                             <div className="relative" key={index}>
-                                <FaCalendarAlt className="absolute top-3 left-3 text-gray-500" />
+                                {field === 'nom' && <FaUser className="absolute top-3 left-3 text-gray-500" />}
+                                {field === 'numTel' && <FaPhone className="absolute top-3 left-3 text-gray-500" />}
+                                {field === 'adresse' && <FaHome className="absolute top-3 left-3 text-gray-500" />}
                                 <input
-                                    type="date"
+                                    type="text"
+                                    placeholder={`Entrer ${field === 'nom' ? 'le nom' : field === 'numTel' ? 'le numéro de téléphone' : 'l\'adresse'}`}
                                     className="border border-gray-300 pl-10 p-2 w-full rounded hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     value={nouveauClient[field]}
                                     onChange={(e) => setNouveauClient({ ...nouveauClient, [field]: e.target.value })}
+                                    disabled={isClientAdded} // Désactiver les champs
                                 />
                             </div>
                         ))}
                     </div>
 
+                    <button
+                        onClick={ajouterClient}
+                        className="flex items-center bg-green-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 mx-auto block"
+                        disabled={isClientAdded} // Désactiver le bouton
+                    >
+                        <FaPlus className="inline-block mr-2" />
+                        
+                        Ajouter Client
+                    </button>
+                </div>
 
-                    <div className="flex justify-center mt-4">
-                        <button
-                            onClick={ajouterClient}
-                            className="flex items-center bg-green-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
-                        >
-                            <FaPlus className="inline-block mr-2" />
-                            Ajouter Client
-                        </button>
+                {/* Section Appareil */}
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                    <h3 className="text-lg font-bold mb-4">Ajouter un Appareil</h3>
+                    {error && <p className="text-red-500 mb-4">{error}</p>}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        {['marque', 'modele', 'numSerie'].map((field, index) => (
+                            <div className="relative" key={index}>
+                                {field === 'marque' && <FaLaptop className="absolute top-3 left-3 text-gray-500" />}
+                                {field === 'modele' && <FaLaptop className="absolute top-3 left-3 text-gray-500" />}
+                                {field === 'numSerie' && <FaBarcode className="absolute top-3 left-3 text-gray-500" />}
+                                <input
+                                    type="text"
+                                    placeholder={`Entrer ${field === 'marque' ? 'la marque' : field === 'modele' ? 'le modèle' : 'le numéro de série'}`}
+                                    className="border border-gray-300 pl-10 p-2 w-full rounded hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={nouvelAppareil[field]}
+                                    onChange={(e) => setNouvelAppareil({ ...nouvelAppareil, [field]: e.target.value })}
+                                />
+                            </div>
+                        ))}
                     </div>
 
+                    <button
+                        onClick={ajouterAppareil}
+                        className="flex items-center bg-green-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 mx-auto block"
+                    >
+                        <FaPlus className="inline-block mr-2" />
+                        Ajouter Appareil
+                    </button>
                 </div>
+                <br />
                 <Footer />
-
             </main>
         </div>
     );

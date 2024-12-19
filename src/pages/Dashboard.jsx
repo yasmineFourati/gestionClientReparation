@@ -1,146 +1,184 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { FaTasks, FaWrench, FaUserAlt, FaDesktop, FaArrowRight, FaSpinner, FaFileInvoice } from 'react-icons/fa';
+import Sidebar from '../components/Sidebarr'; // Sidebar component import
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebarr';
-import Footer from '../components/Footer';
-import { FaTools, FaHourglassHalf, FaCheckCircle, FaBell } from 'react-icons/fa';
-import RepairChart from '../components/RepairChart'; 
 
 const Dashboard = () => {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    navigate('/');
-  };
-  const totalRepairs = 120;
-  const ongoingRepairs = 90;
-  const completedRepairs = 30;
+    // State variables
+    const [demandes, setDemandes] = useState([]);
+    const [clients, setClients] = useState([]);
+    const [appareils, setAppareils] = useState([]);
+    const [reparations, setReparations] = useState([]);
+    const [factures, setFactures] = useState([]); // New state for invoices
+    const [loading, setLoading] = useState(true);
 
-  const ongoingPercentage = (ongoingRepairs / totalRepairs) * 100;
-  const completedPercentage = (completedRepairs / totalRepairs) * 100;
+    // Fetch data on mount
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [demandesRes, clientsRes, appareilsRes, reparationsRes, facturesRes] = await Promise.all([
+                    fetch('http://localhost:8090/demandes-reparation1'),
+                    fetch('http://localhost:8090/clients'),
+                    fetch('http://localhost:8090/appareils'),
+                    fetch('http://localhost:8090/reparations'),
+                    fetch('http://localhost:8090/factures'), // Endpoint for invoices
+                ]);
 
-  return (
-    <div className="flex">
-      
-      <Sidebar />
+                const [demandesData, clientsData, appareilsData, reparationsData, facturesData] = await Promise.all([
+                    demandesRes.json(),
+                    clientsRes.json(),
+                    appareilsRes.json(),
+                    reparationsRes.json(),
+                    facturesRes.json(),
+                ]);
 
-      <main className="flex-1 p-10 bg-gradient-to-r from-gray-100 to-gray-200 ml-64">
-        <header className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-800">Tableau de bord</h2>
-          <button 
-            onClick={handleLogout}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300"
-          >
-            Déconnexion
-          </button>
-        </header>
+                setDemandes(demandesData);
+                setClients(clientsData);
+                setAppareils(appareilsData);
+                setReparations(reparationsData);
+                setFactures(facturesData);
+            } catch (error) {
+                console.error('Erreur lors de la récupération des données:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-         {/* Stat Cards */}
-        <div className="grid grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-5 rounded-lg shadow hover:shadow-md transition flex items-center space-x-4">
-            <FaTools className="text-blue-600 text-4xl" />
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700">Total Réparations</h3>
-              <p className="text-3xl font-bold text-gray-900">{totalRepairs}</p>
-            </div>
-          </div>
-          <div className="bg-white p-5 rounded-lg shadow hover:shadow-md transition flex items-center space-x-4">
-            <FaHourglassHalf className="text-yellow-500 text-4xl" />
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700">Réparations en Cours</h3>
-              <p className="text-3xl font-bold text-gray-900">{ongoingRepairs}</p>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
-                  className="bg-yellow-500 h-2 rounded-full" 
-                  style={{ width: `${ongoingPercentage}%` }} 
-                ></div>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-5 rounded-lg shadow hover:shadow-md transition flex items-center space-x-4">
-            <FaCheckCircle className="text-green-500 text-4xl" />
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700">Réparations Terminées</h3>
-              <p className="text-3xl font-bold text-gray-900">{completedRepairs}</p>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
-                  className="bg-green-500 h-2 rounded-full" 
-                  style={{ width: `${completedPercentage}%` }} 
-                ></div>
-              </div>
-            </div>
-          </div>
+        fetchData();
+    }, []);
+
+    // Utility functions
+    const getStatusCount = (status) => {
+        return demandes.filter(
+            (demande) => demande.etat && demande.etat.trim().toLowerCase() === status.toLowerCase()
+        ).length;
+    };
+
+    const countDistinctClients = () => {
+        const uniqueClients = new Set(clients.map((client) => client.nom));
+        return uniqueClients.size;
+    };
+
+    // Navigation Handlers
+    const handleViewRequests = () => navigate('/listedemande');
+    const handleViewClients = () => navigate('/clientdash');
+    const handleViewAppareils = () => navigate('/appdash');
+    const handleViewReparations = () => navigate('/repdash');
+    const handleViewFactures = () => navigate('/listefac'); // Navigation for invoices
+    const handleLogout = () => {
+        localStorage.removeItem('authToken');
+        navigate('/');
+    };
+
+    return (
+        <div className="flex flex-col lg:flex-row">
+            {/* Sidebar */}
+            <Sidebar />
+
+            {/* Main Content */}
+            <main className="flex-1 p-6 bg-gradient-to-r from-blue-100 to-purple-50 lg:ml-64 transition-all duration-300 ease-in-out">
+                {/* Header */}
+                <header className="flex justify-between items-center mb-6">
+                    <h2 className="text-3xl font-semibold text-gray-800 tracking-wide">Dashboard</h2>
+                    <button
+                        onClick={handleLogout}
+                        className="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow-xl hover:bg-indigo-700 transition duration-300"
+                    >
+                        Déconnexion
+                    </button>
+                </header>
+
+                {/* Loading State */}
+                {loading ? (
+                    <div className="flex justify-center items-center h-64">
+                        <FaSpinner className="animate-spin text-5xl text-gray-700" />
+                        <p className="ml-4 text-xl text-gray-700">Chargement des données...</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Client Information Section */}
+                        <section className="mb-10">
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Informations des Clients</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+                                {/* Total Clients */}
+                                <div className="bg-white p-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300">
+                                    <FaUserAlt className="text-5xl text-teal-500 mb-4 animate-pulse" />
+                                    <h3 className="text-lg font-semibold text-gray-800">Total Clients</h3>
+                                    <p className="text-3xl text-teal-800 font-bold">{countDistinctClients()}</p>
+                                    <button
+                                        onClick={handleViewClients}
+                                        className="mt-4 bg-teal-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-teal-700 transition duration-300 flex items-center"
+                                    >
+                                        Voir les clients <FaArrowRight className="ml-2" />
+                                    </button>
+                                </div>
+
+                                {/* Total Appareils */}
+                                <div className="bg-white p-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300">
+                                    <FaDesktop className="text-5xl text-yellow-500 mb-4 animate-pulse" />
+                                    <h3 className="text-lg font-semibold text-gray-800">Total Appareils</h3>
+                                    <p className="text-3xl text-yellow-800 font-bold">{appareils.length}</p>
+                                    <button
+                                        onClick={handleViewAppareils}
+                                        className="mt-4 bg-yellow-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-yellow-700 transition duration-300 flex items-center"
+                                    >
+                                        Voir les appareils <FaArrowRight className="ml-2" />
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Repair Information Section */}
+                        <section>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Informations des Réparations</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {/* Demandes en Cours */}
+                                <div className="bg-white p-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300">
+                                    <FaWrench className="text-5xl text-red-500 mb-4 animate-pulse" />
+                                    <h3 className="text-lg font-semibold text-gray-800">Demandes en Cours</h3>
+                                    <p className="text-3xl text-red-800 font-bold">{getStatusCount('En Cours')}</p>
+                                    <button
+                                        onClick={handleViewRequests}
+                                        className="mt-4 bg-red-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-red-700 transition duration-300 flex items-center"
+                                    >
+                                        Voir les demandes en cours <FaArrowRight className="ml-2" />
+                                    </button>
+                                </div>
+
+                                {/* Total Réparations */}
+                                <div className="bg-white p-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300">
+                                    <FaTasks className="text-5xl text-indigo-500 mb-4 animate-pulse" />
+                                    <h3 className="text-lg font-semibold text-gray-800">Total Réparations</h3>
+                                    <p className="text-3xl text-indigo-800 font-bold">{reparations.length}</p>
+                                    <button
+                                        onClick={handleViewReparations}
+                                        className="mt-4 bg-indigo-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-indigo-700 transition duration-300 flex items-center"
+                                    >
+                                        Voir les réparations <FaArrowRight className="ml-2" />
+                                    </button>
+                                </div>
+
+                                {/* Total Factures */}
+                                <div className="bg-white p-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300">
+                                    <FaFileInvoice className="text-5xl text-green-500 mb-4 animate-pulse" />
+                                    <h3 className="text-lg font-semibold text-gray-800">Total Factures</h3>
+                                    <p className="text-3xl text-green-800 font-bold">{factures.length}</p>
+                                    <button
+                                        onClick={handleViewFactures}
+                                        className="mt-4 bg-green-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-green-700 transition duration-300 flex items-center"
+                                    >
+                                        Voir les factures <FaArrowRight className="ml-2" />
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+                    </>
+                )}
+            </main>
         </div>
-
-         {/* Repair Chart
-         <div className="bg-white rounded-lg shadow p-5 mb-8">
-          <h3 className="text-xl font-bold mb-4 text-gray-800">Statistiques des Réparations</h3>
-          <RepairChart ongoingRepairs={ongoingRepairs} completedRepairs={completedRepairs} />
-        </div> */}
-
-        {/* Table with Pagination */}
-        <div className="bg-white rounded-lg shadow p-5 mb-8">
-          <h3 className="text-xl font-bold mb-4 text-gray-800">Réparations Récentes</h3>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-200 text-gray-600 uppercase text-sm">
-                <th className="px-4 py-2 border-b">Nom du Client</th>
-                <th className="px-4 py-2 border-b">Appareil</th>
-                <th className="px-4 py-2 border-b">Date de Dépôt</th>
-                <th className="px-4 py-2 border-b">Statut</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Example Rows */}
-              <tr className="hover:bg-gray-100 text-gray-700">
-                <td className="px-4 py-3 border-b">Achraf Karray</td>
-                <td className="px-4 py-3 border-b">Imprimante</td>
-                <td className="px-4 py-3 border-b">2024-09-30</td>
-                <td className="px-4 py-3 border-b text-green-600">Terminée</td>
-              </tr>
-              <tr className="hover:bg-gray-100 text-gray-700">
-                <td className="px-4 py-3 border-b">Mohamed Bouassida</td>
-                <td className="px-4 py-3 border-b">Scanner</td>
-                <td className="px-4 py-3 border-b">2024-10-02</td>
-                <td className="px-4 py-3 border-b text-yellow-600">En Cours</td>
-              </tr>
-              <tr className="hover:bg-gray-100 text-gray-700">
-                <td className="px-4 py-3 border-b">Baya Fourati</td>
-                <td className="px-4 py-3 border-b">Ordinateur Portable</td>
-                <td className="px-4 py-3 border-b">2024-10-05</td>
-                <td className="px-4 py-3 border-b text-green-600">Terminée</td>
-              </tr>
-              <tr className="hover:bg-gray-100 text-gray-700">
-                <td className="px-4 py-3 border-b">Yosra Makni</td>
-                <td className="px-4 py-3 border-b">Imprimante</td>
-                <td className="px-4 py-3 border-b">2024-10-06</td>
-                <td className="px-4 py-3 border-b text-yellow-600">En Cours</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Notifications */}
-        <div className="bg-white rounded-lg shadow p-5 mb-8">
-          <h3 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
-            <FaBell className="mr-2 text-blue-600" /> Notifications
-          </h3>
-          <ul className="space-y-2 text-gray-700">
-            <li className="flex items-center space-x-2">
-              <span className="bg-blue-100 text-blue-600 rounded-full px-2 py-1">Nouveau</span>
-              <p>Rappel : Appeler Yosra Makni pour son appareil réparé.</p>
-            </li>
-            <li className="flex items-center space-x-2">
-              <span className="bg-yellow-100 text-yellow-600 rounded-full px-2 py-1">En Attente</span>
-              <p>Nouvelle réparation enregistrée pour Baya Fourati.</p>
-            </li>
-          </ul>
-        </div>
-        <Footer />
-      </main>
-    </div>
-  );
+    );
 };
 
 export default Dashboard;

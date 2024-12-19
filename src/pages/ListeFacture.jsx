@@ -1,101 +1,109 @@
-import React, { useState } from 'react';
-import { FaFileInvoice, FaArchive } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaEye, FaPrint, FaTimes, FaExclamationCircle } from 'react-icons/fa';
 import Sidebar from '../components/Sidebarr';
 import Footer from '../components/Footer';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const ListeFacture = () => {
     const navigate = useNavigate();
-    const [factures, setFactures] = useState([
-        {
-            id: 1,
-            numeroFacture: 'F001',
-            clientNom: 'Yasmine',
-            total: 3500,
-            dateEmission: '2024-10-20',
-            statut: 'Payée',
-            reparations: [
-                { description: 'Réparation de la carte mère', prix: 1500 },
-                { description: 'Remplacement de la batterie', prix: 800 }
-            ],
-        },
-        {
-            id: 2,
-            numeroFacture: 'F002',
-            clientNom: 'Baya',
-            total: 3200,
-            dateEmission: '2024-10-19',
-            statut: 'En attente',
-            reparations: [
-                { description: 'Remplacement de l\'écran', prix: 1200 },
-                { description: 'Réparation du disque dur', prix: 2000 }
-            ],
-        },
-        // Ajout des nouvelles factures
-        {
-            id: 3,
-            numeroFacture: 'F003',
-            clientNom: 'Ibrahim',
-            total: 2700,
-            dateEmission: '2024-11-01',
-            statut: 'Payée',
-            reparations: [
-                { description: 'Réparation de la carte graphique', prix: 1300 },
-                { description: 'Remplacement du disque dur', prix: 1400 }
-            ],
-        },
-        {
-            id: 4,
-            numeroFacture: 'F004',
-            clientNom: 'Amina',
-            total: 4500,
-            dateEmission: '2024-11-10',
-            statut: 'En attente',
-            reparations: [
-                { description: 'Réparation du clavier', prix: 2000 },
-                { description: 'Remplacement de la carte mère', prix: 2500 }
-            ],
-        },
-    ]);
-
+    const [factures, setFactures] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [selectedFacture, setSelectedFacture] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchInput, setSearchInput] = useState('');
 
-    const handleMoreInfo = (facture) => {
-        setSelectedFacture(selectedFacture === facture ? null : facture);
-    };
+    useEffect(() => {
+        const fetchFactures = async () => {
+            try {
+                const response = await axios.get('http://localhost:8090/factures');
+                setFactures(response.data);
+            } catch (err) {
+                console.error('Error fetching factures:', err);
+                setError("Impossible de récupérer les factures.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchFactures();
+    }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem('authToken');
         navigate('/');
     };
 
-    const handleArchive = (id) => {
-        setFactures(factures.filter(facture => facture.id !== id));
-        alert(`La facture avec le numéro ${id} a été archivée.`);
+    const openModal = (facture) => {
+        setSelectedFacture(facture);
+        setIsModalOpen(true);
     };
 
-    const filteredFactures = factures.filter(facture =>
-        facture.clientNom.toLowerCase().includes(searchInput.toLowerCase())
+    const closeModal = () => {
+        setSelectedFacture(null);
+        setIsModalOpen(false);
+    };
+
+    const handlePrint = () => {
+        const printContent = document.getElementById('facture-details');
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Facture</title><style>');
+        printWindow.document.write(`
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .facture-details { font-size: 14px; margin-bottom: 20px; }
+            .facture-details p { margin: 5px 0; }
+            .facture-header { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 10px; }
+            @media print { .no-print { display: none !important; } }
+        `);
+        printWindow.document.write('</style></head><body>');
+        printWindow.document.write(printContent.innerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+    };
+
+    const filteredFactures = factures.filter((facture) =>
+        facture.reparation?.demandeReparation?.client.nom?.toLowerCase().includes(searchInput.toLowerCase())
     );
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen text-xl font-bold">
+                <div className="animate-spin text-2xl text-blue-600">⏳ Chargement...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex justify-center items-center min-h-screen text-red-600 text-xl">
+                <div className="flex flex-col items-center">
+                    <FaExclamationCircle className="text-5xl mb-4" />
+                    <p>{error}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="bg-blue-600 text-white px-4 py-2 rounded mt-4 hover:bg-blue-700 transition"
+                    >
+                        Réessayer
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex">
             <Sidebar />
-            <main className="flex-1 p-10 bg-gray-200 ml-64">
-                {/* Header Section */}
+            <div className="flex-1 p-6 bg-gray-100 ml-64 min-h-screen">
                 <header className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-800">Liste des Factures</h2>
-                    <div className="flex items-center space-x-4">
-                        {/* Search Input */}
+                    <div className="flex items-center">
                         <input
                             type="text"
-                            placeholder="Recherche par nom du client"
+                            placeholder="Recherche par nom "
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
-                            className="border p-3 rounded-lg w-80"
+                            className="border border-gray-300 p-2 rounded mr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
                         />
-                        {/* Logout Button */}
                         <button
                             onClick={handleLogout}
                             className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300"
@@ -105,45 +113,39 @@ const ListeFacture = () => {
                     </div>
                 </header>
 
-                {/* Factures List */}
-                <div className="bg-white shadow-md rounded-lg p-6">
-                    <table className="w-full mb-8 text-gray-700">
+                <div className="bg-white shadow-lg rounded-lg p-6">
+                    <table className="w-full border-collapse border border-gray-300 text-sm">
                         <thead>
-                            <tr className="bg-gray-200">
-                                <th className="border px-4 py-2">Numéro de facture</th>
-                                <th className="border px-4 py-2">Client</th>
-                                <th className="border px-4 py-2">Total</th>
-                                <th className="border px-4 py-2">Statut</th>
-                                <th className="border px-2 py-2 w-32 text-center">Actions</th> {/* Réduire la largeur de la colonne */}
+                            <tr className="bg-gray-200 text-gray-700 text-left">
+                                <th className="border p-3">Date</th>
+                                <th className="border p-3">Montant Total (TND)</th>
+                                <th className="border p-3">Client</th>
+                                <th className="border p-3">Adresse</th>
+                                <th className="border p-3">Téléphone</th>
+                                <th className="border p-3">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredFactures.map((facture) => (
-                                <tr key={facture.id} className="border-t">
-                                    <td className="border px-4 py-2">{facture.numeroFacture}</td>
-                                    <td className="border px-4 py-2">{facture.clientNom}</td>
-                                    <td className="border px-4 py-2">{facture.total} TDN</td>
-                                    <td className="border px-4 py-2">{facture.statut}</td>
-                                    <td className="border px-2 py-2 text-center">
-                                        {/* Détails et Archive Buttons (Côte à Côte) */}
-                                        <div className="flex justify-center space-x-1">
-                                            <button
-                                                onClick={() => handleMoreInfo(facture)}
-                                                className="flex items-center bg-blue-500 text-white p-1.5 rounded hover:bg-blue-600 transition duration-300"
-                                                aria-label="Afficher plus de détails"
-                                            >
-                                                <FaFileInvoice className="mr-1 text-sm" />
-                                                Détails
-                                            </button>
-                                            <button
-                                                onClick={() => handleArchive(facture.id)}
-                                                className="flex items-center bg-red-500 text-white p-1.5 rounded hover:bg-red-600 transition duration-300"
-                                                aria-label="Archiver"
-                                            >
-                                                <FaArchive className="mr-1 text-sm" />
-                                                Archiver
-                                            </button>
-                                        </div>
+                                <tr key={facture.id} className="hover:bg-gray-100 transition">
+                                    <td className="border p-3">{new Date(facture.date).toLocaleDateString()}</td>
+                                    <td className="border p-3">{facture.montantTotal.toFixed(2)}</td>
+                                    <td className="border p-3">
+                                        {facture.reparation?.demandeReparation?.client.nom || 'Non défini'}
+                                    </td>
+                                    <td className="border p-3">
+                                        {facture.reparation?.demandeReparation?.client.adresse || 'Non défini'}
+                                    </td>
+                                    <td className="border p-3">
+                                        {facture.reparation?.demandeReparation?.client.numTel || 'Non défini'}
+                                    </td>
+                                    <td className="border p-3">
+                                        <button
+                                            onClick={() => openModal(facture)}
+                                            className="bg-blue-600 text-white px-3 py-1 rounded-lg shadow hover:bg-blue-700 transition"
+                                        >
+                                            <FaEye className="inline mr-2" /> Voir Détails
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
@@ -151,27 +153,42 @@ const ListeFacture = () => {
                     </table>
                 </div>
 
-                {/* Facture Details */}
-                {selectedFacture && (
-                    <div className="mt-8 bg-white shadow-md rounded-lg p-6">
-                        <h3 className="text-xl font-bold mb-4">Détails de la Facture #{selectedFacture.numeroFacture}</h3>
-                        <p><strong>Client:</strong> {selectedFacture.clientNom}</p>
-                        <p><strong>Date d'émission:</strong> {selectedFacture.dateEmission}</p>
-                        <p><strong>Statut:</strong> {selectedFacture.statut}</p>
-                        <h4 className="mt-4 font-semibold">Réparations:</h4>
-                        <ul>
-                            {selectedFacture.reparations.map((reparation, index) => (
-                                <li key={index} className="ml-6">{reparation.description} - {reparation.prix} TDN</li>
-                            ))}
-                        </ul>
-                        <div className="mt-4 font-bold">
-                            <p><strong>Total:</strong> {selectedFacture.total} TDN</p>
+                <br />
+                <Footer />
+            </div>
+
+            {/* Modal */}
+            {isModalOpen && selectedFacture && (
+                <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
+                    <div className="bg-white rounded-lg shadow-lg p-6 w-96">
+                        <h2 className="text-xl font-bold text-center mb-4 text-gray-700">
+                            Facture #{selectedFacture.id}
+                        </h2>
+                        <div id="facture-details" className="facture-details text-gray-700 mb-6">
+                            <p><strong>Date:</strong> {new Date(selectedFacture.date).toLocaleDateString()}</p>
+                            <p><strong>Montant Total:</strong> {selectedFacture.montantTotal.toFixed(2)} TND</p>
+                            <p><strong>Réparation:</strong> {selectedFacture.reparation?.id || 'Non défini'}</p>
+                            <p><strong>Client:</strong> {selectedFacture.reparation?.demandeReparation?.client.nom || 'Non défini'}</p>
+                            <p><strong>Adresse:</strong> {selectedFacture.reparation?.demandeReparation?.client.adresse || 'Non défini'}</p>
+                            <p><strong>Téléphone:</strong> {selectedFacture.reparation?.demandeReparation?.client.numTel || 'Non défini'}</p>
+                        </div>
+                        <div className="flex justify-between">
+                            <button
+                                onClick={closeModal}
+                                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition"
+                            >
+                                <FaTimes className="inline mr-2" /> Fermer
+                            </button>
+                            <button
+                                onClick={handlePrint}
+                                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                            >
+                                <FaPrint className="inline mr-2" /> Imprimer
+                            </button>
                         </div>
                     </div>
-                )}
-<br></br>
-                <Footer />
-            </main>
+                </div>
+            )}
         </div>
     );
 };
